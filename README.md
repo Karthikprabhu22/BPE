@@ -9,4 +9,4 @@ likelihood set of CMB parameters, $P(\mathbf{\theta}})$.
 
 This approach has been used in these papers:
 
-1. Observational Evidence from Supernovae for an Accelerating Universe and a Cosmological Constant (https://arxiv.org/pdf/astro-ph/9805201.pdf)
+1. Observational Evidence from Supernovae for an Accelerating Universe and a Cosmological Constant (https://iopscience.iop.org/article/10.3847/1538-4357/aab9bb/pdf)

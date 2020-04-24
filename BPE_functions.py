@@ -22,3 +22,22 @@ def metropolis(current_state, posterior, param_vector):
         return current_state
     if ratio > r:
         return g_vector
+
+
+def MCMC(num_iter, posterior, param_vector):
+    """
+    Run the Markov Chain Monte Carlo algorithm for num_iter steps on the posterior distribution.
+    """
+    current_state = [
+        random.choice(param_vector[0]),
+        random.choice(param_vector[1]),
+        random.choice(param_vector[2]),
+        random.choice(param_vector[3]),
+    ]
+    chain = [current_state]
+    for _ in range(num_iter):
+        link = metropolis(current_state, posterior, param_vector)
+        chain.append(link)
+        current_state = link
+    # Don't include the beginning of the chain to ensure a steady state.
+    return chain[2000:]

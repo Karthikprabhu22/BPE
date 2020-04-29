@@ -2,7 +2,8 @@
 import random
 import numpy as np
 import os
-
+from numpy.random import default_rng
+rng = default_rng()
 
 def chi_squared(H_0, omega_m,omega_lam,omega_k):
     #TODO implement chi_squared function
@@ -40,9 +41,25 @@ def metropolis(current_state):
     if ratio > r:
         return g_vector
 
-def prior(H_0, omega_m, omega_lam, omega_k):
-    #TODO implement prior function
-    return
+def prior():
+    """
+    For simplicity, we will use uniform prior for all the parameters
+    
+    Parameters
+    ----------
+    none
+    
+    Returns
+    -------
+    prior_vector: array
+        An array of priors for all the 4 parameters
+    """ 
+    prior_H_0 = rng.uniform(67,73)
+    prior_omega_m = rng.uniform(0.26,0.31)
+    prior_omega_lam = rng.uniform(0.68,0.73)
+    prior_M = rng.uniform(19.1,19.3)
+    prior_vector = np.array([prior_H_0,prior_omega_m,prior_omega_lam,prior_M])
+    return prior_vector
 
 def MCMC(num_iter, likelihood, param_vector):
     """
@@ -126,4 +143,23 @@ def integrate_Ez_prime(z,num_bins,omega_m,omega_lam,omega_k):
     return Total
 
 
+def mu_data(m_B,M):
+    """
+    Function to return $\mu^d$, the value of distance modulus inferred from the data.
+    Based on equation (3) in the paper.
+    Parameters
+    ----------
+    m_B: float
+        Log of the overall flux normalization. Available in the dataset.
+    
+    M: float
+        The absolute B-band magnitude of a fiducial SN Ia with x1 = 0 and c = 0. 
+        Nuisance parameter that needs to be sampled.
 
+    Returns
+    -------
+    mu: float
+        The distance modulus inferred from the data.
+    """
+    mu = m_B - M
+    return mu

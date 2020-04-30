@@ -4,11 +4,144 @@ import numpy as np
 import os
 from numpy.random import default_rng
 rng = default_rng()
+from scipy.integrate import quad
 
-def chi_squared(H_0, omega_m,omega_lam,omega_k):
-    #TODO implement chi_squared function
-    return
+def invert_matrix(input_list):
+    """
+    Returns the inverse of input_list
 
+    Parameters:
+    input_list: 2d array
+        an array of floats
+    """
+    inverted_matrix = np.linalg.inv(input_list)
+    return inverted_matrix
+
+def E(z, H_0, omega_m, omega_lam, omega_k):
+    return np.sqrt(omega_m*(1 + z)**3 + omega_k*(1 + z)**2 + omega_lam)
+
+def hubble_distance(H_0):
+    """
+    Calculates the hubble distance for a given value of the hubble constant
+
+    Parameters:
+    H_0: float
+        the hubble constant
+    """
+    speed_of_light = 299792.458 #speed of light in km/s
+    return speed_of_light/H_0
+
+def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
+    """
+    Calculates the comoving distance
+
+    Parameters:
+    H_0: float
+        the Hubble constant
+    omega_m: float
+        total matter density
+    omega_lam: float
+        dark energy density
+    omega_k: float
+        curvature
+    z: float
+        redshift
+    """
+    return hubble_distance(H_0)*quad(E, 0, z, args=(H_0, omega_m, omega_lam, omega_k))
+
+def transverse_comoving_distance(H_0, omega_m,omega_lam,omega_k, z):
+    """
+    Calculates the transverse comoving distance
+
+    Parameters:
+    H_0: float
+        the Hubble constant
+    omega_m: float
+        total matter density
+    omega_lam: float
+        dark energy density
+    omega_k: float
+        curvature
+    z: float
+        redshift
+    """
+
+    if (omega_k > 0):
+        return hubble_distance(H_0)/np.sqrt(omega_k)*np.sinh(np.sqrt(omega_k)*comoving_distance(H_0, omega_m,omega_lam,omega_k, z)/hubble_distance(H_0))
+
+    elif (omega_k == 0):
+        return comoving_distance(H_0, omega_m,omega_lam,omega_k, z)
+    
+    else:
+        return hubble_distance(H_0)/np.sqrt(np.abs(omega_k))*np.sin(np.sqrt(np.abs(omega_k))*comoving_distance(H_0, omega_m,omega_lam,omega_k, z)/hubble_distance(H_0))
+
+
+def luminosity_distance(H_0, omega_m, omega_lam, omega_k, z):
+    """
+    Calculates the luminosity distance
+
+    Parameters:
+    H_0: float
+        the Hubble constant
+    omega_m: float
+        total matter density
+    omega_lam: float
+        dark energy density
+    omega_k: float
+        curvature
+    z: float
+        redshift
+    """
+    return (1 + z)*transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z)
+
+def signal(H_0, omega_m, omega_lam, omega_k, z):
+    """
+    Calculates the signal
+
+    Parameters:
+    H_0: float
+        the Hubble constant
+    omega_m: float
+        total matter density
+    omega_lam: float
+        dark energy density
+    omega_k: float
+        curvature
+    z: float
+        redshift
+    """
+    return 5*np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z)/10)
+
+def chi_squared(H_0, omega_m, omega_lam, omega_k, container):
+    """
+    Calculates chi squared
+
+    Parameters:
+    H_0: float
+        the Hubble constant
+    omega_m: float
+        total matter density
+    omega_lam: float
+        dark energy density
+    omega_k: float
+        curvature
+    z: float
+        redshift
+    container: DataContainer
+        a container filled with data imported from the provided data files
+    """
+    chi_squared = []
+    z = container.z
+    mb = container.mb
+    covariance_matrix = container.covariance_matrix
+    inverted_covariance_matrix = invert_matrix(covariance_matrix)
+
+    for i in range(len(container.name)):
+        for j in range(len(container.name)):
+            chi_squared.append(-(mb[i] - signal(H_0, omega_m, omega_lam, omega_k, z[i]) - M[i])*inverted_covariance_matrix[i][j]*(mb[j] - signal(H_0, omega_m, omega_lam, omega_k, z[j]) - M[j]))
+
+
+    return chi_squared
 
 def likelihood(H_0, omega_m, omega_lam, omega_k):
     return np.exp(-chi_squared(H_0, omega_m,omega_lam,omega_k)/2)
@@ -29,9 +162,9 @@ def metropolis(current_state):
         np.random.normal(current_state[2],scale=1.0),
         np.random.normal(current_state[3],scale=1.0)
     ]
-    ratio = likelihood(g_vector[0], g_vector[1],g_vector[2],g_vector[3]) *
-            prior(g_vector[0], g_vector[1],g_vector[2],g_vector[3]) /
-            likelihood(current_state[0], current_state[1],current_state[2],current_state[3]) *
+    ratio = likelihood(g_vector[0], g_vector[1],g_vector[2],g_vector[3]) * \
+            prior(g_vector[0], g_vector[1],g_vector[2],g_vector[3]) / \
+            likelihood(current_state[0], current_state[1],current_state[2],current_state[3]) * \
             prior(current_state[0], current_state[1],current_state[2],current_state[3])
 
     if ratio >= 1:
@@ -87,15 +220,10 @@ class DataContainer(object):
 
     def __init__(self):
         self.name = []
-        self.zcmb = []
-        self.zhel = []
-        self.dz = []
+        self.z = []
         self.mb = []
         self.dmb = []
-        self.x1 = []
-        self.dx1 = []
-        self.color = []
-        self.dcolor = []
+        self.systematic_covariance_matrix = []
         self.covariance_matrix = []
 
     def import_params(self):
@@ -106,9 +234,9 @@ class DataContainer(object):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         filepath =  dir_path + "/data/lcparam_DS17f.txt"
         
-        self.name, self.zcmb, self.zhel, self.dz, self.mb, self.dmb, self.x1, self.dx1, self.color, self.dcolor = np.genfromtxt(filepath, usecols=(0,1,2,3,4,5,6,7,8,9), delimiter =' ', unpack = True)
+        self.name, self.z, self.mb, self.dmb = np.genfromtxt(filepath, usecols=(0,1,4,5), delimiter =' ', unpack = True)
 
-    def import_covariance_matrix(self):
+    def import_systematic_covariance_matrix(self):
         """
         Imports the systematic covariance matrix from the file sys_DS17f.txt and stores it in a 2D array
         """
@@ -124,10 +252,18 @@ class DataContainer(object):
                 value = float(line)
                 covariance_values.append(value)
         
-        covariance_matrix = np.asarray(covariance_values)
-        covariance_matrix.reshape(matrix_dimension, matrix_dimension)
+        covariance_list = np.asarray(covariance_values)
+        two_d_covariance_matrix = covariance_list.reshape(matrix_dimension, matrix_dimension)
+        
 
-        self.covariance_matrix = covariance_matrix
+        self.systematic_covariance_matrix = two_d_covariance_matrix
+
+    def calculate_total_covariance_matrix(self):
+        covariance_matrix = self.systematic_covariance_matrix
+        for i in range(40):
+            covariance_matrix[i][i] += self.dmb[i]**2
+
+
 
 def Ez(z,omega_m,omega_lam,omega_k):
     return np.sqrt(omega_m*(1+z)**3+omega_lam+omega_k*(1+z)**2)

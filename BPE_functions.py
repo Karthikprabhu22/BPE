@@ -182,14 +182,14 @@ def metropolis(current_state, container):
     current_state[0]=H_0
     current_state[0]=Omega_m
     current_state[0]=Omega_lam
-    current_state[3]=Omega_k
+    current_state[3]=M
     """
     r = np.random.random()
     g_vector = [
-        np.random.normal(current_state[0], scale=1.0),
-        np.random.normal(current_state[1], scale=1.0),
-        np.random.normal(current_state[2], scale=1.0),
-        np.random.normal(current_state[3], scale=1.0),
+        np.random.normal(current_state[0], scale=2.5),
+        np.random.normal(current_state[1], scale=0.16),
+        np.random.normal(current_state[2], scale=0.24),
+        np.random.normal(current_state[3], scale=0.5),
     ]
     ratio = (
         likelihood(g_vector[0], g_vector[1], g_vector[2], g_vector[3], container)

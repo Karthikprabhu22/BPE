@@ -175,6 +175,15 @@ def likelihood(H_0, omega_m, omega_lam, omega_k, container):
     return np.exp(-chi_squared(H_0, omega_m, omega_lam, omega_k, container) / 2)
 
 
+def generating_function(param_vector, mcmc_covariance=np.diag([0.16, 0.24, 2.5, 0.5])):
+
+    mean = param_vector
+    cov = mcmc_covariance
+
+    new_state = np.random.multivariate_normal(mean, cov)
+    return new_state
+
+
 def metropolis(current_state, container):
     """
     Perform one step of the metropolis algorithm, does not move time forward.
@@ -185,24 +194,17 @@ def metropolis(current_state, container):
     current_state[3]=M
     """
     r = np.random.random()
-    g_vector = [
-        np.random.normal(current_state[0], scale=2.5),
-        np.random.normal(current_state[1], scale=0.16),
-        np.random.normal(current_state[2], scale=0.24),
-        np.random.normal(current_state[3], scale=0.5),
-    ]
-    ratio = (
-        likelihood(g_vector[0], g_vector[1], g_vector[2], g_vector[3], container)
-        * prior()
-        / (
-            likelihood(
-                current_state[0],
-                current_state[1],
-                current_state[2],
-                current_state[3],
-                container,
-            )
-            * prior()
+
+    g_vector = generating_function(current_state)
+    ratio = likelihood(
+        g_vector[0], g_vector[1], g_vector[2], g_vector[3], container
+    ) / (
+        likelihood(
+            current_state[0],
+            current_state[1],
+            current_state[2],
+            current_state[3],
+            container,
         )
     )
 
@@ -212,27 +214,6 @@ def metropolis(current_state, container):
         return current_state
     if ratio > r:
         return g_vector
-
-
-def prior():
-    """
-    For simplicity, we will use uniform prior for all the parameters
-    
-    Parameters
-    ----------
-    none
-    
-    Returns
-    -------
-    prior_vector: array
-        An array of priors for all the 4 parameters
-    """
-    prior_H_0 = rng.uniform(67, 73)
-    prior_omega_m = rng.uniform(0.26, 0.31)
-    prior_omega_lam = rng.uniform(0.68, 0.73)
-    prior_M = rng.uniform(19.1, 19.3)
-    prior_vector = np.array([prior_H_0, prior_omega_m, prior_omega_lam, prior_M])
-    return prior_vector
 
 
 def MCMC(num_iter, likelihood, container):

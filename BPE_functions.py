@@ -3,8 +3,10 @@ import random
 import numpy as np
 import os
 from numpy.random import default_rng
+
 rng = default_rng()
 from scipy.integrate import quad
+
 
 def invert_matrix(input_list):
     """
@@ -17,8 +19,10 @@ def invert_matrix(input_list):
     inverted_matrix = np.linalg.inv(input_list)
     return inverted_matrix
 
+
 def E(z, H_0, omega_m, omega_lam, omega_k):
-    return np.sqrt(omega_m*(1 + z)**3 + omega_k*(1 + z)**2 + omega_lam)
+    return np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
+
 
 def hubble_distance(H_0):
     """
@@ -28,8 +32,9 @@ def hubble_distance(H_0):
     H_0: float
         the hubble constant
     """
-    speed_of_light = 299792.458 #speed of light in km/s
-    return speed_of_light/H_0
+    speed_of_light = 299792.458  # speed of light in km/s
+    return speed_of_light / H_0
+
 
 def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
     """
@@ -44,12 +49,20 @@ def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
         dark energy density
     omega_k: float
         curvature
-    z: float
+    z: array
         redshift
+    Returns:
+    comoving_distance: float
+        The comoving distance
     """
-    return hubble_distance(H_0)*quad(E, 0, z, args=(H_0, omega_m, omega_lam, omega_k))
 
-def transverse_comoving_distance(H_0, omega_m,omega_lam,omega_k, z):
+    comoving_distance = hubble_distance(H_0) * np.array(
+        [quad(E, 0, i, args=(H_0, omega_m, omega_lam, omega_k))[0] for i in z]
+    )
+    return comoving_distance
+
+
+def transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
     """
     Calculates the transverse comoving distance
 
@@ -66,14 +79,30 @@ def transverse_comoving_distance(H_0, omega_m,omega_lam,omega_k, z):
         redshift
     """
 
-    if (omega_k > 0):
-        return hubble_distance(H_0)/np.sqrt(omega_k)*np.sinh(np.sqrt(omega_k)*comoving_distance(H_0, omega_m,omega_lam,omega_k, z)/hubble_distance(H_0))
+    if omega_k > 0:
+        return (
+            hubble_distance(H_0)
+            / np.sqrt(omega_k)
+            * np.sinh(
+                np.sqrt(omega_k)
+                * comoving_distance(H_0, omega_m, omega_lam, omega_k, z)
+                / hubble_distance(H_0)
+            )
+        )
 
-    elif (omega_k == 0):
-        return comoving_distance(H_0, omega_m,omega_lam,omega_k, z)
-    
+    elif omega_k == 0:
+        return comoving_distance(H_0, omega_m, omega_lam, omega_k, z)
+
     else:
-        return hubble_distance(H_0)/np.sqrt(np.abs(omega_k))*np.sin(np.sqrt(np.abs(omega_k))*comoving_distance(H_0, omega_m,omega_lam,omega_k, z)/hubble_distance(H_0))
+        return (
+            hubble_distance(H_0)
+            / np.sqrt(np.abs(omega_k))
+            * np.sin(
+                np.sqrt(np.abs(omega_k))
+                * comoving_distance(H_0, omega_m, omega_lam, omega_k, z)
+                / hubble_distance(H_0)
+            )
+        )
 
 
 def luminosity_distance(H_0, omega_m, omega_lam, omega_k, z):
@@ -92,7 +121,8 @@ def luminosity_distance(H_0, omega_m, omega_lam, omega_k, z):
     z: float
         redshift
     """
-    return (1 + z)*transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z)
+    return (1 + z) * transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z)
+
 
 def signal(H_0, omega_m, omega_lam, omega_k, z):
     """
@@ -110,9 +140,10 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
     z: float
         redshift
     """
-    return 5*np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z)/10) + 25 #+25 need for H_0 in Mpc
+    return 5 * np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z) / 10)
 
-def chi_squared(H_0, omega_m, omega_lam, omega_k, container):
+
+def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
     """
     Calculates chi squared
 
@@ -125,48 +156,74 @@ def chi_squared(H_0, omega_m, omega_lam, omega_k, container):
         dark energy density
     omega_k: float
         curvature
-    z: float
+    M: float
+        Nuisance parameter
+    z: array
         redshift
     container: DataContainer
-        a container filled with data imported from the provided data files
+        A container filled with data imported from the provided data files.
+
+    Returns:
+    chi_squared: float
+        The chi_squared value for that particular point in parameter space.
     """
-    chi_squared = []
+
     z = container.z
     mb = container.mb
     covariance_matrix = container.covariance_matrix
     inverted_covariance_matrix = invert_matrix(covariance_matrix)
 
-    for i in range(len(container.name)):
-        for j in range(len(container.name)):
-            chi_squared.append(-(mb[i] - signal(H_0, omega_m, omega_lam, omega_k, z[i]) - M[i])*inverted_covariance_matrix[i][j]*(mb[j] - signal(H_0, omega_m, omega_lam, omega_k, z[j]) - M[j]))
-
-
+    chi_squared = np.linalg.multi_dot(
+        [
+            (mb - signal(H_0, omega_m, omega_lam, omega_k, z) - M),
+            inverted_covariance_matrix,
+            (mb - signal(H_0, omega_m, omega_lam, omega_k, z) - M),
+        ]
+    )
     return chi_squared
 
-def likelihood(H_0, omega_m, omega_lam, omega_k):
-    return np.exp(-chi_squared(H_0, omega_m,omega_lam,omega_k)/2)
 
-def metropolis(current_state):
+def likelihood(H_0, omega_m, omega_lam, omega_k, M, container):
+    return np.exp(-chi_squared(H_0, omega_m, omega_lam, omega_k, M, container) / 2)
+
+
+def generating_function(param_vector, mcmc_covariance=np.diag([2.5, 0.03, 0.03, 0.5])):
+
+    mean = param_vector
+    cov = mcmc_covariance
+
+    new_state = np.random.multivariate_normal(mean, cov)
+    return new_state
+
+
+def metropolis(current_state, container):
     """
     Perform one step of the metropolis algorithm, does not move time forward.
     The generating function is tbd.
     current_state[0]=H_0
-    current_state[0]=Omega_m
-    current_state[0]=Omega_lam
-    current_state[3]=Omega_k
+    current_state[1]=Omega_m
+    current_state[2]=Omega_lam
+    current_state[3]=M
     """
     r = np.random.random()
-    g_vector = [
-        np.random.normal(current_state[0],scale=1.0),
-        np.random.normal(current_state[1],scale=1.0),
-        np.random.normal(current_state[2],scale=1.0),
-        np.random.normal(current_state[3],scale=1.0)
-    ]
-    ratio = likelihood(g_vector[0], g_vector[1],g_vector[2],g_vector[3]) * \
-            prior(g_vector[0], g_vector[1],g_vector[2],g_vector[3]) / \
-            likelihood(current_state[0], current_state[1],current_state[2],current_state[3]) * \
-            prior(current_state[0], current_state[1],current_state[2],current_state[3])
-
+    g_vector = generating_function(current_state)
+    ratio = likelihood(
+        g_vector[0],
+        g_vector[1],
+        g_vector[2],
+        1.0 - g_vector[1] - g_vector[2],
+        g_vector[3],
+        container,
+    ) / (
+        likelihood(
+            current_state[0],
+            current_state[1],
+            current_state[2],
+            1.0 - current_state[1] - current_state[2],
+            current_state[3],
+            container,
+        )
+    )
     if ratio >= 1:
         return g_vector
     if ratio < r:
@@ -174,44 +231,26 @@ def metropolis(current_state):
     if ratio > r:
         return g_vector
 
-def prior():
-    """
-    For simplicity, we will use uniform prior for all the parameters
-    
-    Parameters
-    ----------
-    none
-    
-    Returns
-    -------
-    prior_vector: array
-        An array of priors for all the 4 parameters
-    """ 
-    prior_H_0 = rng.uniform(67,73)
-    prior_omega_m = rng.uniform(0.26,0.31)
-    prior_omega_lam = rng.uniform(0.68,0.73)
-    prior_M = rng.uniform(19.1,19.3)
-    prior_vector = np.array([prior_H_0,prior_omega_m,prior_omega_lam,prior_M])
-    return prior_vector
 
-def MCMC(num_iter, likelihood, param_vector):
+def MCMC(num_iter, container):
     """
     Run the Markov Chain Monte Carlo algorithm for num_iter steps on the likelihood distribution.
     """
-    #create the initial configuration in parameter space
+    # create the random initial configuration in parameter space
     current_state = [
-        random.choice(param_vector[0]),
-        random.choice(param_vector[1]),
-        random.choice(param_vector[2]),
-        random.choice(param_vector[3])
+        np.random.normal(loc=70, scale=3),
+        np.random.normal(loc=0.3, scale=0.0001),
+        np.random.normal(loc=0.7, scale=0.0001),
+        np.random.normal(loc=10, scale=0.01),
     ]
     chain = [current_state]
     for _ in range(num_iter):
-        link = metropolis(current_state, likelihood)
+        link = metropolis(current_state, container)
         chain.append(link)
         current_state = link
     # Don't include the beginning of the chain to ensure a steady state.
-    return chain[2000:]
+    return chain
+
 
 class DataContainer(object):
     """
@@ -230,11 +269,13 @@ class DataContainer(object):
         """
         Imports the parameter values from the file lcparam_DS17f.txt and stores them in separate arrays, ordered by name (in this case name is an integer 0-39)
         lcparam_DS17f.txt is assumed to be stored in a directory called data that is located in the same directory as BPE_function.py
-        """ 
+        """
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        filepath =  dir_path + "/data/lcparam_DS17f.txt"
-        
-        self.name, self.z, self.mb, self.dmb = np.genfromtxt(filepath, usecols=(0,1,4,5), delimiter =' ', unpack = True)
+        filepath = dir_path + "/data/lcparam_DS17f.txt"
+
+        self.name, self.z, self.mb, self.dmb = np.genfromtxt(
+            filepath, usecols=(0, 1, 4, 5), delimiter=" ", unpack=True
+        )
 
     def import_systematic_covariance_matrix(self):
         """
@@ -242,7 +283,7 @@ class DataContainer(object):
         """
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        filepath =  dir_path + "/data/sys_DS17f.txt"
+        filepath = dir_path + "/data/sys_DS17f.txt"
 
         covariance_values = []
 
@@ -251,36 +292,44 @@ class DataContainer(object):
             for line in file:
                 value = float(line)
                 covariance_values.append(value)
-        
+
         covariance_list = np.asarray(covariance_values)
-        two_d_covariance_matrix = covariance_list.reshape(matrix_dimension, matrix_dimension)
-        
+        two_d_covariance_matrix = covariance_list.reshape(
+            matrix_dimension, matrix_dimension
+        )
 
         self.systematic_covariance_matrix = two_d_covariance_matrix
 
     def calculate_total_covariance_matrix(self):
-        covariance_matrix = self.systematic_covariance_matrix
+        self.covariance_matrix = np.copy(self.systematic_covariance_matrix)
         for i in range(40):
-            covariance_matrix[i][i] += self.dmb[i]**2
+            self.covariance_matrix[i][i] += self.dmb[i] ** 2
 
 
+def Ez(z, omega_m, omega_lam, omega_k):
+    return np.sqrt(omega_m * (1 + z) ** 3 + omega_lam + omega_k * (1 + z) ** 2)
 
-def Ez(z,omega_m,omega_lam,omega_k):
-    return np.sqrt(omega_m*(1+z)**3+omega_lam+omega_k*(1+z)**2)
 
-def integrate_Ez_prime(z,num_bins,omega_m,omega_lam,omega_k):
-    step_size=z/num_bins
-    Total=0
-    z_prime=0
+def integrate_Ez_prime(z, num_bins, omega_m, omega_lam, omega_k):
+    step_size = z / num_bins
+    Total = 0
+    z_prime = 0
 
     for _ in range(len(num_bins)):
-        Total+= (Ez(z_prime+step_size,omega_m,omega_lam,omega_k)+Ez(z_prime+step_size,omega_m,omega_lam,omega_k))*step_size/2
-        z_prime+=step_size
+        Total += (
+            (
+                Ez(z_prime + step_size, omega_m, omega_lam, omega_k)
+                + Ez(z_prime + step_size, omega_m, omega_lam, omega_k)
+            )
+            * step_size
+            / 2
+        )
+        z_prime += step_size
     return Total
 
 
-def mu_data(m_B,M):
-    """
+def mu_data(m_B, M):
+    r"""
     Function to return $\mu^d$, the value of distance modulus inferred from the data.
     Based on equation (3) in the paper.
     Parameters

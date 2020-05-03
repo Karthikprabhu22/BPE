@@ -52,7 +52,7 @@ def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
     z: float
         redshift
     """
-    return hubble_distance(H_0) * quad(E, 0, z, args=(H_0, omega_m, omega_lam, omega_k))
+    return hubble_distance(H_0) * quad(E, 0, z, args=(H_0, omega_m, omega_lam, omega_k)
 
 
 def transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z):

@@ -110,7 +110,7 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
     z: float
         redshift
     """
-    return 5*np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z)/10)
+    return 5*np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z)/10) + 25 #+25 need for H_0 in Mpc
 
 def chi_squared(H_0, omega_m, omega_lam, omega_k, container):
     """

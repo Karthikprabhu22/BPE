@@ -175,9 +175,9 @@ def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
 
     chi_squared = np.linalg.multi_dot(
         [
-            (mb - (signal(H_0, omega_m, omega_lam, omega_k, z) - M)),
+            (mb - (signal(H_0, omega_m, omega_lam, omega_k, z) + M)),
             inverted_covariance_matrix,
-            (mb - (signal(H_0, omega_m, omega_lam, omega_k, z) - M)),
+            (mb - (signal(H_0, omega_m, omega_lam, omega_k, z) + M)),
         ]
     )
     return chi_squared

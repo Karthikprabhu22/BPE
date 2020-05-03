@@ -187,7 +187,7 @@ def likelihood(H_0, omega_m, omega_lam, omega_k, M, container):
     return np.exp(-chi_squared(H_0, omega_m, omega_lam, omega_k, M, container) / 2)
 
 
-def generating_function(param_vector, mcmc_covariance=np.diag([0.16, 0.24, 2.5, 0.5])):
+def generating_function(param_vector, mcmc_covariance=np.diag([2.5, 0.03, 0.03, 0.5])):
 
     mean = param_vector
     cov = mcmc_covariance
@@ -206,20 +206,24 @@ def metropolis(current_state, container):
     current_state[3]=M
     """
     r = np.random.random()
-
     g_vector = generating_function(current_state)
     ratio = likelihood(
-        g_vector[0], g_vector[1], g_vector[2], g_vector[3], container
+        g_vector[0],
+        g_vector[1],
+        g_vector[2],
+        1.0 - g_vector[1] - g_vector[2],
+        g_vector[3],
+        container,
     ) / (
         likelihood(
             current_state[0],
             current_state[1],
             current_state[2],
+            1.0 - current_state[1] - current_state[2],
             current_state[3],
             container,
         )
     )
-
     if ratio >= 1:
         return g_vector
     if ratio < r:
@@ -228,16 +232,16 @@ def metropolis(current_state, container):
         return g_vector
 
 
-def MCMC(num_iter, likelihood, container):
+def MCMC(num_iter, container):
     """
     Run the Markov Chain Monte Carlo algorithm for num_iter steps on the likelihood distribution.
     """
     # create the random initial configuration in parameter space
     current_state = [
-        np.random.normal(loc=1, scale=1),
-        np.random.normal(loc=1, scale=1),
-        np.random.normal(loc=1, scale=1),
-        np.random.normal(loc=1, scale=1),
+        np.random.normal(loc=70, scale=3),
+        np.random.normal(loc=0.3, scale=0.0001),
+        np.random.normal(loc=0.7, scale=0.0001),
+        np.random.normal(loc=10, scale=0.01),
     ]
     chain = [current_state]
     for _ in range(num_iter):
@@ -325,7 +329,7 @@ def integrate_Ez_prime(z, num_bins, omega_m, omega_lam, omega_k):
 
 
 def mu_data(m_B, M):
-    """
+    r"""
     Function to return $\mu^d$, the value of distance modulus inferred from the data.
     Based on equation (3) in the paper.
     Parameters

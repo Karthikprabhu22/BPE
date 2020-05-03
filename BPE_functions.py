@@ -201,8 +201,8 @@ def metropolis(current_state, container):
     Perform one step of the metropolis algorithm, does not move time forward.
     The generating function is tbd.
     current_state[0]=H_0
-    current_state[0]=Omega_m
-    current_state[0]=Omega_lam
+    current_state[1]=Omega_m
+    current_state[2]=Omega_lam
     current_state[3]=M
     """
     r = np.random.random()
@@ -249,7 +249,7 @@ def MCMC(num_iter, container):
         chain.append(link)
         current_state = link
     # Don't include the beginning of the chain to ensure a steady state.
-    return chain[2000:]
+    return chain
 
 
 class DataContainer(object):

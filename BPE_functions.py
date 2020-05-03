@@ -49,12 +49,17 @@ def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
         dark energy density
     omega_k: float
         curvature
-    z: float
+    z: array
         redshift
+    Returns:
+    comoving_distance: float
+        The comoving distance
     """
-    return (
-        hubble_distance(H_0) * quad(E, 0, z, args=(H_0, omega_m, omega_lam, omega_k))[0]
+
+    comoving_distance = hubble_distance(H_0) * np.array(
+        [quad(E, 0, i, args=(H_0, omega_m, omega_lam, omega_k))[0] for i in z]
     )
+    return comoving_distance
 
 
 def transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
@@ -138,7 +143,7 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
     return 5 * np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z) / 10)
 
 
-def chi_squared(H_0, omega_m, omega_lam, omega_k, container):
+def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
     """
     Calculates chi squared
 
@@ -151,30 +156,35 @@ def chi_squared(H_0, omega_m, omega_lam, omega_k, container):
         dark energy density
     omega_k: float
         curvature
-    z: float
+    M: float
+        Nuisance parameter
+    z: array
         redshift
     container: DataContainer
-        a container filled with data imported from the provided data files
+        A container filled with data imported from the provided data files.
+
+    Returns:
+    chi_squared: float
+        The chi_squared value for that particular point in parameter space.
     """
-    chi_squared = []
+
     z = container.z
     mb = container.mb
     covariance_matrix = container.covariance_matrix
     inverted_covariance_matrix = invert_matrix(covariance_matrix)
 
-    for i in range(len(container.name)):
-        for j in range(len(container.name)):
-            chi_squared.append(
-                -(mb[i] - signal(H_0, omega_m, omega_lam, omega_k, z[i]) - M[i])
-                * inverted_covariance_matrix[i][j]
-                * (mb[j] - signal(H_0, omega_m, omega_lam, omega_k, z[j]) - M[j])
-            )
-
+    chi_squared = np.linalg.multi_dot(
+        [
+            (mb - signal(H_0, omega_m, omega_lam, omega_k, z) - M),
+            inverted_covariance_matrix,
+            (mb - signal(H_0, omega_m, omega_lam, omega_k, z) - M),
+        ]
+    )
     return chi_squared
 
 
-def likelihood(H_0, omega_m, omega_lam, omega_k, container):
-    return np.exp(-chi_squared(H_0, omega_m, omega_lam, omega_k, container) / 2)
+def likelihood(H_0, omega_m, omega_lam, omega_k, M, container):
+    return np.exp(-chi_squared(H_0, omega_m, omega_lam, omega_k, M, container) / 2)
 
 
 def generating_function(param_vector, mcmc_covariance=np.diag([0.16, 0.24, 2.5, 0.5])):
@@ -287,9 +297,9 @@ class DataContainer(object):
         self.systematic_covariance_matrix = two_d_covariance_matrix
 
     def calculate_total_covariance_matrix(self):
-        covariance_matrix = self.systematic_covariance_matrix
+        self.covariance_matrix = np.copy(self.systematic_covariance_matrix)
         for i in range(40):
-            covariance_matrix[i][i] += self.dmb[i] ** 2
+            self.covariance_matrix[i][i] += self.dmb[i] ** 2
 
 
 def Ez(z, omega_m, omega_lam, omega_k):

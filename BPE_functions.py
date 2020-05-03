@@ -21,7 +21,7 @@ def invert_matrix(input_list):
 
 
 def E(z, H_0, omega_m, omega_lam, omega_k):
-    return np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
+    return 1/np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
 
 
 def hubble_distance(H_0):
@@ -140,7 +140,7 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
     z: float
         redshift
     """
-    return 5 * np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z) / 10)
+    return 5 * np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z)*10**6 / 10)
 
 
 def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
@@ -175,9 +175,9 @@ def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
 
     chi_squared = np.linalg.multi_dot(
         [
-            (mb - signal(H_0, omega_m, omega_lam, omega_k, z) - M),
+            (mb - (signal(H_0, omega_m, omega_lam, omega_k, z) - M)),
             inverted_covariance_matrix,
-            (mb - signal(H_0, omega_m, omega_lam, omega_k, z) - M),
+            (mb - (signal(H_0, omega_m, omega_lam, omega_k, z) - M)),
         ]
     )
     return chi_squared
@@ -241,7 +241,7 @@ def MCMC(num_iter, container):
         np.random.normal(loc=70, scale=3),
         np.random.normal(loc=0.3, scale=0.0001),
         np.random.normal(loc=0.7, scale=0.0001),
-        np.random.normal(loc=10, scale=0.01),
+        np.random.normal(loc=-18, scale=0.01),
     ]
     chain = [current_state]
     for _ in range(num_iter):

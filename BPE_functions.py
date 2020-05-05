@@ -21,7 +21,7 @@ def invert_matrix(input_list):
 
 
 def E(z, H_0, omega_m, omega_lam, omega_k):
-    return 1/np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
+    return 1 / np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
 
 
 def hubble_distance(H_0):
@@ -140,7 +140,9 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
     z: float
         redshift
     """
-    return 5 * np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z)*10**6 / 10)
+    return 5 * np.log10(
+        luminosity_distance(H_0, omega_m, omega_lam, omega_k, z) * 10 ** 6 / 10
+    )
 
 
 def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):

@@ -7,19 +7,6 @@ from numpy.random import default_rng
 rng = default_rng()
 from scipy.integrate import quad
 
-
-def invert_matrix(input_list):
-    """
-    Returns the inverse of input_list
-
-    Parameters:
-    input_list: 2d array
-        an array of floats
-    """
-    inverted_matrix = np.linalg.inv(input_list)
-    return inverted_matrix
-
-
 def E(z, H_0, omega_m, omega_lam, omega_k):
     return 1/np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
 
@@ -170,8 +157,7 @@ def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
 
     z = container.z
     mb = container.mb
-    covariance_matrix = container.covariance_matrix
-    inverted_covariance_matrix = invert_matrix(covariance_matrix)
+    inverted_covariance_matrix = container.inverted_covariance_matrix
 
     chi_squared = np.linalg.multi_dot(
         [
@@ -264,11 +250,15 @@ class DataContainer(object):
         self.dmb = []
         self.systematic_covariance_matrix = []
         self.covariance_matrix = []
+        self.inverted_covariance_matrix = []
 
     def import_params(self):
         """
-        Imports the parameter values from the file lcparam_DS17f.txt and stores them in separate arrays, ordered by name (in this case name is an integer 0-39)
-        lcparam_DS17f.txt is assumed to be stored in a directory called data that is located in the same directory as BPE_function.py
+        Imports the parameter values from the file lcparam_DS17f.txt and stores them in 
+        separate arrays, ordered by name (in this case name is an integer 0-39)
+        
+        lcparam_DS17f.txt is assumed to be stored in a directory called data that is 
+        located in the same directory as BPE_function.py
         """
         dir_path = os.path.dirname(os.path.realpath(__file__))
         filepath = dir_path + "/data/lcparam_DS17f.txt"
@@ -304,47 +294,13 @@ class DataContainer(object):
         self.covariance_matrix = np.copy(self.systematic_covariance_matrix)
         for i in range(40):
             self.covariance_matrix[i][i] += self.dmb[i] ** 2
+            
+    def invert_covariance_matrix(self):
+        """
+        Returns the inverse of input_list
 
-
-def Ez(z, omega_m, omega_lam, omega_k):
-    return np.sqrt(omega_m * (1 + z) ** 3 + omega_lam + omega_k * (1 + z) ** 2)
-
-
-def integrate_Ez_prime(z, num_bins, omega_m, omega_lam, omega_k):
-    step_size = z / num_bins
-    Total = 0
-    z_prime = 0
-
-    for _ in range(len(num_bins)):
-        Total += (
-            (
-                Ez(z_prime + step_size, omega_m, omega_lam, omega_k)
-                + Ez(z_prime + step_size, omega_m, omega_lam, omega_k)
-            )
-            * step_size
-            / 2
-        )
-        z_prime += step_size
-    return Total
-
-
-def mu_data(m_B, M):
-    r"""
-    Function to return $\mu^d$, the value of distance modulus inferred from the data.
-    Based on equation (3) in the paper.
-    Parameters
-    ----------
-    m_B: float
-        Log of the overall flux normalization. Available in the dataset.
-    
-    M: float
-        The absolute B-band magnitude of a fiducial SN Ia with x1 = 0 and c = 0. 
-        Nuisance parameter that needs to be sampled.
-
-    Returns
-    -------
-    mu: float
-        The distance modulus inferred from the data.
-    """
-    mu = m_B - M
-    return mu
+        Parameters:
+        input_list: 2d array
+            an array of floats
+        """
+        self.inverted_covariance_matrix = np.linalg.inv(input_list)

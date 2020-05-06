@@ -21,7 +21,7 @@ def invert_matrix(input_list):
 def E(z, H_0, omega_m, omega_lam, omega_k):
     # returns 1/E(z)
 
-    E_val=1/np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
+    E_val = 1 / np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
     return E_val
 
 
@@ -56,8 +56,6 @@ def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
     comoving_distance: float
         The comoving distance
     """
-    
-
 
     comoving_distance = hubble_distance(H_0) * np.array(
         [quad(E, 0, i, args=(H_0, omega_m, omega_lam, omega_k))[0] for i in z]
@@ -144,8 +142,10 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
     z: float
         redshift
     """
-    signal = 5 * np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z)*10**6 / 10)
-    
+    signal = 5 * np.log10(
+        luminosity_distance(H_0, omega_m, omega_lam, omega_k, z) * 10 ** 6 / 10
+    )
+
     return signal
 
 
@@ -177,14 +177,14 @@ def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
     z = container.z
     mb = container.mb
     covariance_matrix = container.covariance_matrix
-    #TODO feed inverted matrix as parameter.
+    # TODO feed inverted matrix as parameter.
     inverted_covariance_matrix = invert_matrix(covariance_matrix)
 
     chi_squared = np.linalg.multi_dot(
         [
-            (mb - signal(H_0, omega_m, omega_lam, omega_k, z) - M),
+            (mb - (signal(H_0, omega_m, omega_lam, omega_k, z) + M)),
             inverted_covariance_matrix,
-            (mb - signal(H_0, omega_m, omega_lam, omega_k, z) - M),
+            (mb - (signal(H_0, omega_m, omega_lam, omega_k, z) + M)),
         ]
     )
     return chi_squared
@@ -194,23 +194,24 @@ def likelihood(H_0, omega_m, omega_lam, omega_k, M, container):
     return np.exp(-chi_squared(H_0, omega_m, omega_lam, omega_k, M, container) / 2)
 
 
-def generating_function(param_vector, container, mcmc_covariance=np.diag([.1, 0.001, 0.001, 0.01])):
+def generating_function(
+    param_vector, container, mcmc_covariance=np.diag([0.1, 0.001, 0.001, 0.01])
+):
 
     mean = param_vector
     cov = mcmc_covariance
-    
+
     new_state = np.random.multivariate_normal(mean, cov)
-    #z_max=container.z
-    #sanity_check=[]
-#    for z_max in z_list:
-#        sanity_check.append((new_state[1] * (1 + z_max) ** 3 + (1-new_state[1]-new_state[2]) * (1 + z_max) ** 2 + new_state[2]))
-    #sanity_check = ((new_state[1] * (1 + z_max) ** 3 + (1-new_state[1]-new_state[2]) * (1 + z_max) ** 2 + new_state[2]))
-    #lum_dist = luminosity_distance(new_state[0], new_state[1], new_state[2], 1-new_state[1]-new_state[2], z_max)*10**6 / 10
-    #any_negatives= True if True in [state < 0 for state in sanity_check] else False
-    #any_neg_lum = True if True in [state < 0 for state in lum_dist] else False
+    # z_max=container.z
+    # sanity_check=[]
+    #    for z_max in z_list:
+    #        sanity_check.append((new_state[1] * (1 + z_max) ** 3 + (1-new_state[1]-new_state[2]) * (1 + z_max) ** 2 + new_state[2]))
+    # sanity_check = ((new_state[1] * (1 + z_max) ** 3 + (1-new_state[1]-new_state[2]) * (1 + z_max) ** 2 + new_state[2]))
+    # lum_dist = luminosity_distance(new_state[0], new_state[1], new_state[2], 1-new_state[1]-new_state[2], z_max)*10**6 / 10
+    # any_negatives= True if True in [state < 0 for state in sanity_check] else False
+    # any_neg_lum = True if True in [state < 0 for state in lum_dist] else False
     if new_state[1] < 0 or new_state[2] < 0:
         new_state = param_vector
-    
 
     return new_state
 
@@ -226,11 +227,10 @@ def metropolis(current_state, container):
     """
     r = np.random.random()
 
-    g_vector = generating_function(current_state,container)
+    g_vector = generating_function(current_state, container)
 
-        
-    g_vector[0]=74
-    g_vector[3]=-19.23
+    g_vector[0] = 74
+    g_vector[3] = -19.23
     ratio = likelihood(
         g_vector[0],
         g_vector[1],
@@ -262,25 +262,48 @@ def MCMC(num_iter, container):
     """
     # create the random initial configuration in parameter space
     current_state = [
-        #np.random.normal(loc=67, scale=3),
+        # np.random.normal(loc=67, scale=3),
         74,
         np.random.normal(loc=0.3, scale=0.0001),
         np.random.normal(loc=0.7, scale=0.0001),
-        #np.random.normal(loc=-20, scale=0.01),
+        # np.random.normal(loc=-20, scale=0.01),
         -19.23,
     ]
     chain = [current_state]
     print("The first state is: " + str(current_state))
-    print("The initial Chi-Squared is: " +str(chi_squared(current_state[0], current_state[1], current_state[2], 1-current_state[1]-current_state[2], current_state[3], container)))
+    print(
+        "The initial Chi-Squared is: "
+        + str(
+            chi_squared(
+                current_state[0],
+                current_state[1],
+                current_state[2],
+                1 - current_state[1] - current_state[2],
+                current_state[3],
+                container,
+            )
+        )
+    )
     for i in range(num_iter):
         link = metropolis(current_state, container)
         chain.append(link)
         current_state = link.copy()
-        if i%1000==0:
+        if i % 1000 == 0:
             print("The current state is: " + str(link))
-            print("The current Chi-Squared is: " +str(chi_squared(current_state[0], current_state[1], current_state[2], 1-current_state[1]-current_state[2], current_state[3], container)))
-            
-    
+            print(
+                "The current Chi-Squared is: "
+                + str(
+                    chi_squared(
+                        current_state[0],
+                        current_state[1],
+                        current_state[2],
+                        1 - current_state[1] - current_state[2],
+                        current_state[3],
+                        container,
+                    )
+                )
+            )
+
     # Don't include the beginning of the chain to ensure a steady state.
     return chain[2000:]
 
@@ -337,4 +360,3 @@ class DataContainer(object):
         self.covariance_matrix = np.copy(self.systematic_covariance_matrix)
         for i in range(40):
             self.covariance_matrix[i][i] += self.dmb[i] ** 2
-

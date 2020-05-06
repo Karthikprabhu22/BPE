@@ -2,9 +2,7 @@
 import random
 import numpy as np
 import os
-from numpy.random import default_rng
 
-rng = default_rng()
 from scipy.integrate import quad
 
 
@@ -21,7 +19,10 @@ def invert_matrix(input_list):
 
 
 def E(z, H_0, omega_m, omega_lam, omega_k):
-    return np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
+    # returns 1/E(z)
+
+    E_val=1/np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
+    return E_val
 
 
 def hubble_distance(H_0):
@@ -30,7 +31,7 @@ def hubble_distance(H_0):
 
     Parameters:
     H_0: float
-        the hubble constant
+        the hubble constant in km/(s*Mpc)
     """
     speed_of_light = 299792.458  # speed of light in km/s
     return speed_of_light / H_0
@@ -55,6 +56,8 @@ def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
     comoving_distance: float
         The comoving distance
     """
+    
+
 
     comoving_distance = hubble_distance(H_0) * np.array(
         [quad(E, 0, i, args=(H_0, omega_m, omega_lam, omega_k))[0] for i in z]
@@ -121,6 +124,7 @@ def luminosity_distance(H_0, omega_m, omega_lam, omega_k, z):
     z: float
         redshift
     """
+
     return (1 + z) * transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z)
 
 
@@ -140,7 +144,9 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
     z: float
         redshift
     """
-    return 5 * np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z) / 10)
+    signal = 5 * np.log10(luminosity_distance(H_0, omega_m, omega_lam, omega_k, z)*10**6 / 10)
+    
+    return signal
 
 
 def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
@@ -171,6 +177,7 @@ def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
     z = container.z
     mb = container.mb
     covariance_matrix = container.covariance_matrix
+    #TODO feed inverted matrix as parameter.
     inverted_covariance_matrix = invert_matrix(covariance_matrix)
 
     chi_squared = np.linalg.multi_dot(
@@ -187,12 +194,24 @@ def likelihood(H_0, omega_m, omega_lam, omega_k, M, container):
     return np.exp(-chi_squared(H_0, omega_m, omega_lam, omega_k, M, container) / 2)
 
 
-def generating_function(param_vector, mcmc_covariance=np.diag([2.5, 0.03, 0.03, 0.5])):
+def generating_function(param_vector, container, mcmc_covariance=np.diag([.1, 0.001, 0.001, 0.01])):
 
     mean = param_vector
     cov = mcmc_covariance
-
+    
     new_state = np.random.multivariate_normal(mean, cov)
+    #z_max=container.z
+    #sanity_check=[]
+#    for z_max in z_list:
+#        sanity_check.append((new_state[1] * (1 + z_max) ** 3 + (1-new_state[1]-new_state[2]) * (1 + z_max) ** 2 + new_state[2]))
+    #sanity_check = ((new_state[1] * (1 + z_max) ** 3 + (1-new_state[1]-new_state[2]) * (1 + z_max) ** 2 + new_state[2]))
+    #lum_dist = luminosity_distance(new_state[0], new_state[1], new_state[2], 1-new_state[1]-new_state[2], z_max)*10**6 / 10
+    #any_negatives= True if True in [state < 0 for state in sanity_check] else False
+    #any_neg_lum = True if True in [state < 0 for state in lum_dist] else False
+    if new_state[1] < 0 or new_state[2] < 0:
+        new_state = param_vector
+    
+
     return new_state
 
 
@@ -206,7 +225,12 @@ def metropolis(current_state, container):
     current_state[3]=M
     """
     r = np.random.random()
-    g_vector = generating_function(current_state)
+
+    g_vector = generating_function(current_state,container)
+
+        
+    g_vector[0]=74
+    g_vector[3]=-19.23
     ratio = likelihood(
         g_vector[0],
         g_vector[1],
@@ -228,7 +252,7 @@ def metropolis(current_state, container):
         return g_vector
     if ratio < r:
         return current_state
-    if ratio > r:
+    if ratio >= r:
         return g_vector
 
 
@@ -238,18 +262,27 @@ def MCMC(num_iter, container):
     """
     # create the random initial configuration in parameter space
     current_state = [
-        np.random.normal(loc=70, scale=3),
+        #np.random.normal(loc=67, scale=3),
+        74,
         np.random.normal(loc=0.3, scale=0.0001),
         np.random.normal(loc=0.7, scale=0.0001),
-        np.random.normal(loc=10, scale=0.01),
+        #np.random.normal(loc=-20, scale=0.01),
+        -19.23,
     ]
     chain = [current_state]
-    for _ in range(num_iter):
+    print("The first state is: " + str(current_state))
+    print("The initial Chi-Squared is: " +str(chi_squared(current_state[0], current_state[1], current_state[2], 1-current_state[1]-current_state[2], current_state[3], container)))
+    for i in range(num_iter):
         link = metropolis(current_state, container)
         chain.append(link)
-        current_state = link
+        current_state = link.copy()
+        if i%1000==0:
+            print("The current state is: " + str(link))
+            print("The current Chi-Squared is: " +str(chi_squared(current_state[0], current_state[1], current_state[2], 1-current_state[1]-current_state[2], current_state[3], container)))
+            
+    
     # Don't include the beginning of the chain to ensure a steady state.
-    return chain
+    return chain[2000:]
 
 
 class DataContainer(object):
@@ -305,46 +338,3 @@ class DataContainer(object):
         for i in range(40):
             self.covariance_matrix[i][i] += self.dmb[i] ** 2
 
-
-def Ez(z, omega_m, omega_lam, omega_k):
-    return np.sqrt(omega_m * (1 + z) ** 3 + omega_lam + omega_k * (1 + z) ** 2)
-
-
-def integrate_Ez_prime(z, num_bins, omega_m, omega_lam, omega_k):
-    step_size = z / num_bins
-    Total = 0
-    z_prime = 0
-
-    for _ in range(len(num_bins)):
-        Total += (
-            (
-                Ez(z_prime + step_size, omega_m, omega_lam, omega_k)
-                + Ez(z_prime + step_size, omega_m, omega_lam, omega_k)
-            )
-            * step_size
-            / 2
-        )
-        z_prime += step_size
-    return Total
-
-
-def mu_data(m_B, M):
-    r"""
-    Function to return $\mu^d$, the value of distance modulus inferred from the data.
-    Based on equation (3) in the paper.
-    Parameters
-    ----------
-    m_B: float
-        Log of the overall flux normalization. Available in the dataset.
-    
-    M: float
-        The absolute B-band magnitude of a fiducial SN Ia with x1 = 0 and c = 0. 
-        Nuisance parameter that needs to be sampled.
-
-    Returns
-    -------
-    mu: float
-        The distance modulus inferred from the data.
-    """
-    mu = m_B - M
-    return mu

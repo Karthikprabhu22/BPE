@@ -149,7 +149,9 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
     return signal
 
 
-def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
+def chi_squared(
+    H_0, omega_m, omega_lam, omega_k, M, container, include_systematic_errors=True
+):
     """
     Calculates chi squared
 
@@ -176,9 +178,10 @@ def chi_squared(H_0, omega_m, omega_lam, omega_k, M, container):
 
     z = container.z
     mb = container.mb
-    covariance_matrix = container.covariance_matrix
-    # TODO feed inverted matrix as parameter.
-    inverted_covariance_matrix = invert_matrix(covariance_matrix)
+    if include_systematic_errors:
+        inverted_covariance_matrix = container.inverted_covariance_matrix
+    else:
+        inverted_covariance_matrix = container.inverted_statistical_covariance_matrix
 
     chi_squared = np.linalg.multi_dot(
         [

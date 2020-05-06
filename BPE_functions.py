@@ -5,6 +5,7 @@ import os
 
 from scipy.integrate import quad
 
+
 def E(z, H_0, omega_m, omega_lam, omega_k):
     # returns 1/E(z)
 
@@ -279,7 +280,11 @@ def MCMC(num_iter, container):
         chain.append(link)
         current_state = link.copy()
         if i % 1000 == 0:
-            print("The current state is: " + str(link))
+            print(
+                "The current state is: "
+                + str(link)
+                + "\t {0:.0%} completed".format(i / num_iter)
+            )
             print(
                 "The current Chi-Squared is: "
                 + str(
@@ -338,15 +343,15 @@ class DataContainer(object):
         )
 
         self.systematic_covariance_matrix = two_d_covariance_matrix
-        self.covariance_matrix = np.copy(
-            self.systematic_covariance_matrix
-        )
+        self.covariance_matrix = np.copy(self.systematic_covariance_matrix)
         for i in range(40):
             self.covariance_matrix[i][i] += self.dmb[i] ** 2
             self.statistical_covariance_matrix[i][i] = self.dmb[i] ** 2
 
         self.inverted_covariance_matrix = np.linalg.inv(self.covariance_matrix)
-        self.inverted_statistical_covariance_matrix = np.linalg.inv(self.statistical_covariance_matrix)
+        self.inverted_statistical_covariance_matrix = np.linalg.inv(
+            self.statistical_covariance_matrix
+        )
 
     def import_params(self):
         """
@@ -392,5 +397,3 @@ class DataContainer(object):
             self.covariance_matrix[i][i] += self.dmb[i] ** 2
 
         self.inverted_covariance_matrix = np.linalg.inv(self.covariance_matrix)
-
-

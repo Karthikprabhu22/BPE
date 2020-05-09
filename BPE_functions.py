@@ -300,7 +300,7 @@ def MCMC(num_iter, container):
             )
 
     # Don't include the beginning of the chain to ensure a steady state.
-    return chain[2000:]
+    return np.array(chain[2000:])
 
 
 class DataContainer(object):

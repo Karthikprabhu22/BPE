@@ -1,4 +1,12 @@
-from BPE_functions import E, luminosity_distance, comoving_distance, signal
+from BPE_functions import (
+    E,
+    luminosity_distance,
+    comoving_distance,
+    signal,
+    DataContainer,
+    generating_function,
+    metropolis,
+)
 import numpy as np
 
 
@@ -36,5 +44,24 @@ def test_luminosity_distance():
     ), "something wrong with the luminosity_distance function"
 
 
+def test_generating_function():
+    container = DataContainer()
+    param_vector = [0.1, 0.2, 0.3, 0.4]
+    test_g_f = generating_function(param_vector, container)
+    assert len(test_g_f) == 4
+    for parameter in test_g_f:
+        assert type(parameter) == float
+
+
+def test_metropolis():
+    container = DataContainer()
+    current_state = [0.1, 0.2, 0.3, 0.4]
+    new_state = metropolis(current_state, container)
+    assert len(metropolis) == 4
+    for parameter in new_state:
+        assert type(parameter) == float
+
+
 test_E()
 test_luminosity_distance()
+test_generating_function

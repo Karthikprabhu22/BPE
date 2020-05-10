@@ -182,25 +182,25 @@ def chi_squared(
 
 
 def likelihood(H_0, omega_m, omega_lam, omega_k, M, container):
+    """
+    returns the likelihood of a state given a set of parameters.
+    """
+
     return np.exp(-chi_squared(H_0, omega_m, omega_lam, omega_k, M, container) / 2)
 
 
 def generating_function(
     param_vector, container, mcmc_covariance=np.diag([0.1, 0.001, 0.001, 0.01])
 ):
+    """
+    creates a new state by sampling from a multivariate normal distribution around the current state with covariance matrix possibly given by the user.
+    Does not allow the new state to be outside the realm of physical possibility.
+    """
 
     mean = param_vector
     cov = mcmc_covariance
 
     new_state = np.random.multivariate_normal(mean, cov)
-    # z_max=container.z
-    # sanity_check=[]
-    #    for z_max in z_list:
-    #        sanity_check.append((new_state[1] * (1 + z_max) ** 3 + (1-new_state[1]-new_state[2]) * (1 + z_max) ** 2 + new_state[2]))
-    # sanity_check = ((new_state[1] * (1 + z_max) ** 3 + (1-new_state[1]-new_state[2]) * (1 + z_max) ** 2 + new_state[2]))
-    # lum_dist = luminosity_distance(new_state[0], new_state[1], new_state[2], 1-new_state[1]-new_state[2], z_max)*10**6 / 10
-    # any_negatives= True if True in [state < 0 for state in sanity_check] else False
-    # any_neg_lum = True if True in [state < 0 for state in lum_dist] else False
     if new_state[1] < 0 or new_state[2] < 0:
         new_state = param_vector
 
@@ -220,7 +220,6 @@ def metropolis(current_state, container):
 
     g_vector = generating_function(current_state, container)
 
-    g_vector[0] = 74
     g_vector[3] = -19.23
     ratio = likelihood(
         g_vector[0],
@@ -299,7 +298,7 @@ def MCMC(num_iter, container):
                 )
             )
 
-    # Don't include the beginning of the chain to ensure a steady state.
+    # Don't include the beginning of the chain to ensure a steady state is shown.
     return np.array(chain[2000:])
 
 

@@ -62,6 +62,38 @@ def test_metropolis():
         assert type(parameter) == float
 
 
+def test_DataContainer():
+    """
+    Test DataContainer class and related functions
+    """
+    container = DataContainer()
+    container.import_data()
+
+    assert len(container.name) == 40, "Missing name values"
+    assert len(container.z) == 40, "Missing z values"
+    assert len(container.mb) == 40, "Missing mb values"
+    assert len(container.dmb) == 40, "Missing dmb values"
+    assert len(container.covariance_matrix) == 40, "Missing covariance values"
+    assert len(container.covariance_matrix[25]) == 40, "Missing covariance values"
+
+    assert container.name[0] == 0, "name read incorrectly"
+    assert container.name[39] == 39, "name read incorrectly"
+    assert container.name[27] == 27, "name read incorrectly"
+
+    assert container.z[17] == 0.1635, "z read incorrectly"
+    assert container.z[0] == 0.014, "z read incorrectly"
+    assert container.z[39] == 1.6123, "z read incorrectly"
+
+    assert container.mb[11] == 19.0388242428, "mb read incorrectly"
+    assert container.mb[0] == 14.57001926, "mb read incorrectly"
+    assert container.mb[39] == 25.9259729107, "mb read incorrectly"
+
+    assert container.dmb[34] == 0.031, "dmb read incorrectly"
+    assert container.dmb[0] == 0.0311, "dmb read incorrectly"
+    assert container.dmb[39] == 0.0735, "dmb read incorrectly"
+
+
 test_E()
 test_luminosity_distance()
 test_generating_function
+test_DataContainer()

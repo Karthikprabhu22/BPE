@@ -217,7 +217,9 @@ def generating_function(
     return new_state
 
 
-def metropolis(current_state, container, include_systematic_errors=True):
+def metropolis(
+    current_state, container, include_systematic_errors=True, include_M_prior=False
+):
     """
     Perform one step of the metropolis algorithm, does not move time forward.
     The generating function is tbd.
@@ -232,22 +234,32 @@ def metropolis(current_state, container, include_systematic_errors=True):
         current_state, container, include_systematic_errors=include_systematic_errors
     )
 
-    g_vector[3] = -19.23
-    ratio = likelihood(
-        g_vector[0],
-        g_vector[1],
-        g_vector[2],
-        1.0 - g_vector[1] - g_vector[2],
-        g_vector[3],
-        container,
-    ) / (
-        likelihood(
-            current_state[0],
-            current_state[1],
-            current_state[2],
-            1.0 - current_state[1] - current_state[2],
-            current_state[3],
+    if include_M_prior:
+        prior_g = np.exp(-((-19.23 - g_vector[3]) ** 2) / (2 * 0.042 ** 2))
+        prior_current = np.exp(-((-19.23 - current_state[3]) ** 2) / (2 * 0.042 ** 2))
+        prior_ratio = prior_g / prior_current
+    else:
+        prior_ratio = 1
+
+    ratio = (
+        prior_ratio
+        * likelihood(
+            g_vector[0],
+            g_vector[1],
+            g_vector[2],
+            1.0 - g_vector[1] - g_vector[2],
+            g_vector[3],
             container,
+        )
+        / (
+            likelihood(
+                current_state[0],
+                current_state[1],
+                current_state[2],
+                1.0 - current_state[1] - current_state[2],
+                current_state[3],
+                container,
+            )
         )
     )
     if ratio >= 1:
@@ -258,11 +270,12 @@ def metropolis(current_state, container, include_systematic_errors=True):
         return g_vector
 
 
-def MCMC(num_iter, container, include_systematic_errors=True):
+def MCMC(num_iter, container, include_systematic_errors=True, include_M_prior=False):
     """
     Run the Markov Chain Monte Carlo algorithm for num_iter steps on the likelihood distribution.
     """
     # create the random initial configuration in parameter space
+
     current_state = [
         np.random.normal(loc=74, scale=3),
         np.random.normal(loc=0.3, scale=0.0001),
@@ -289,6 +302,7 @@ def MCMC(num_iter, container, include_systematic_errors=True):
             current_state,
             container,
             include_systematic_errors=include_systematic_errors,
+            include_M_prior=include_M_prior,
         )
         chain.append(link)
         current_state = link.copy()

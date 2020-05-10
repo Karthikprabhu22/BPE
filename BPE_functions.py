@@ -181,16 +181,26 @@ def chi_squared(
     return chi_squared
 
 
-def likelihood(H_0, omega_m, omega_lam, omega_k, M, container):
+def likelihood(
+    H_0, omega_m, omega_lam, omega_k, M, container, include_systematic_errors=True
+):
     """
     returns the likelihood of a state given a set of parameters.
     """
 
-    return np.exp(-chi_squared(H_0, omega_m, omega_lam, omega_k, M, container) / 2)
+    return np.exp(
+        -chi_squared(
+            H_0, omega_m, omega_lam, omega_k, M, container, include_systematic_errors
+        )
+        / 2
+    )
 
 
 def generating_function(
-    param_vector, container, mcmc_covariance=np.diag([0.1, 0.001, 0.001, 0.01])
+    param_vector,
+    container,
+    mcmc_covariance=np.diag([0.1, 0.001, 0.001, 0.01]),
+    include_systematic_errors=True,
 ):
     """
     creates a new state by sampling from a multivariate normal distribution around the current state with covariance matrix possibly given by the user.
@@ -207,7 +217,7 @@ def generating_function(
     return new_state
 
 
-def metropolis(current_state, container):
+def metropolis(current_state, container, include_systematic_errors=True):
     """
     Perform one step of the metropolis algorithm, does not move time forward.
     The generating function is tbd.
@@ -218,7 +228,9 @@ def metropolis(current_state, container):
     """
     r = np.random.random()
 
-    g_vector = generating_function(current_state, container)
+    g_vector = generating_function(
+        current_state, container, include_systematic_errors=include_systematic_errors
+    )
 
     g_vector[3] = -19.23
     ratio = likelihood(
@@ -246,18 +258,16 @@ def metropolis(current_state, container):
         return g_vector
 
 
-def MCMC(num_iter, container):
+def MCMC(num_iter, container, include_systematic_errors=True):
     """
     Run the Markov Chain Monte Carlo algorithm for num_iter steps on the likelihood distribution.
     """
     # create the random initial configuration in parameter space
     current_state = [
-        # np.random.normal(loc=67, scale=3),
-        74,
+        np.random.normal(loc=74, scale=3),
         np.random.normal(loc=0.3, scale=0.0001),
         np.random.normal(loc=0.7, scale=0.0001),
-        # np.random.normal(loc=-20, scale=0.01),
-        -19.23,
+        np.random.normal(loc=-19.23, scale=0.01),
     ]
     chain = [current_state]
     print("The first state is: " + str(current_state))
@@ -275,7 +285,11 @@ def MCMC(num_iter, container):
         )
     )
     for i in range(num_iter):
-        link = metropolis(current_state, container)
+        link = metropolis(
+            current_state,
+            container,
+            include_systematic_errors=include_systematic_errors,
+        )
         chain.append(link)
         current_state = link.copy()
         if i % 1000 == 0:

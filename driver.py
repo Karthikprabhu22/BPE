@@ -59,3 +59,25 @@ plt.xlabel("$H_0$")
 plt.ylabel("Posterior")
 plt.show()
 plt.savefig(r"Posterior distribution of $H_0$.png")
+
+
+# Plot confidence intervals for 1-sigma and 2-sigma
+omega_m = chain[:, 1]
+omega_lambda = chain[:, 2]
+
+cov = np.cov(omega_m, omega_lambda)
+lambda_, v = np.linalg.eig(cov)
+lambda_ = np.sqrt(lambda_)
+ax = plt.subplot(111, aspect='equal')
+plt.xlabel(r"$\Omega_m$")
+plt.ylabel(r"$\Omega_\Lambda$")
+plt.title(r"$1\sigma$" +  " and " + r"$2\sigma$" + " Confidence Intervals")
+for j in range(1, 3):
+    ell = Ellipse(xy=(np.mean(omega_m), np.mean(omega_lambda)),
+                  width=lambda_[0]*j*2, height=lambda_[1]*j*2,
+                  angle=np.rad2deg(np.arccos(v[0, 0])))
+    ell.set_facecolor('none')
+    ell.set_edgecolor('black')
+    ax.add_artist(ell)
+plt.scatter(omega_m, omega_lambda)
+plt.show()

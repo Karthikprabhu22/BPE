@@ -11,7 +11,7 @@ import corner
 c = bpe.DataContainer()
 c.import_data()
 
-chain = bpe.MCMC(10000, c, include_systematic_errors=True, include_M_prior=False)
+chain = bpe.MCMC(10000, c, include_systematic_errors=True, include_M_prior=True)
 
 # Plotting function
 fig = plt.figure()

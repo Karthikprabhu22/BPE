@@ -64,7 +64,7 @@ def transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
         dark energy density
     omega_k: float
         curvature
-    z: float
+    z: array
         redshift
     """
 
@@ -107,7 +107,7 @@ def luminosity_distance(H_0, omega_m, omega_lam, omega_k, z):
         dark energy density
     omega_k: float
         curvature
-    z: float
+    z: array
         redshift
     """
 
@@ -127,7 +127,7 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
         dark energy density
     omega_k: float
         curvature
-    z: float
+    z: array
         redshift
     """
     signal = 5 * np.log10(

@@ -50,3 +50,11 @@ plt.plot(c.z, [0] * 40)
 plt.errorbar(c.z, mu_D - mu_T, fmt="o", yerr=c.dmb)
 plt.show()
 plt.savefig("lum_dist.png")
+
+
+# Plot the other fig
+fig = plt.figure()
+plt.xlabel("$H_0$")
+plt.ylabel("Posterior")
+plt.show()
+plt.savefig(r"Posterior distribution of $H_0$.png")

@@ -2,32 +2,12 @@
 import random
 import numpy as np
 import os
-
 from scipy.integrate import quad
 
 
 def E(z, H_0, omega_m, omega_lam, omega_k):
-    # returns 1/E(z)
-
-    E_val = 1 / np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
-    return E_val
-
-
-def hubble_distance(H_0):
-    """
-    Calculates the hubble distance for a given value of the hubble constant
-
-    Parameters:
-    H_0: float
-        the hubble constant in km/(s*Mpc)
-    """
-    speed_of_light = 299792.458  # speed of light in km/s
-    return speed_of_light / H_0
-
-
-def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
-    """
-    Calculates the comoving distance
+    """ 
+    Calculates 1/E(z) in equation (9) in Scolnic 18
 
     Parameters:
     H_0: float
@@ -40,6 +20,41 @@ def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
         curvature
     z: array
         redshift
+
+    Returns:
+    E_val: float
+        1/E function in eqn (9)
+    """
+    E_val = 1 / np.sqrt(omega_m * (1 + z) ** 3 + omega_k * (1 + z) ** 2 + omega_lam)
+    return E_val
+
+
+def hubble_distance(H_0):
+    """
+    Calculates the hubble distance for a given value of the hubble constant
+
+    Parameters:
+    H_0: float
+        the hubble constant in km/(s*Mpc)
+
+    Returns:
+     float: hubble_distance
+        Hubble distance
+    """
+    speed_of_light = 299792.458  # speed of light in km/s
+    hubble_distance = speed_of_light / H_0
+    return hubble_distance
+
+
+def comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
+    """
+    Calculates the comoving distance
+
+    Parameters:
+    H_0, omega_m, omega_lam, omega_k: Refer to function E
+    z: array
+        redshift
+
     Returns:
     comoving_distance: float
         The comoving distance
@@ -56,14 +71,7 @@ def transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z):
     Calculates the transverse comoving distance
 
     Parameters:
-    H_0: float
-        the Hubble constant
-    omega_m: float
-        total matter density
-    omega_lam: float
-        dark energy density
-    omega_k: float
-        curvature
+    H_0, omega_m, omega_lam, omega_k: Refer to function E
     z: array
         redshift
     """
@@ -99,19 +107,18 @@ def luminosity_distance(H_0, omega_m, omega_lam, omega_k, z):
     Calculates the luminosity distance
 
     Parameters:
-    H_0: float
-        the Hubble constant
-    omega_m: float
-        total matter density
-    omega_lam: float
-        dark energy density
-    omega_k: float
-        curvature
+    H_0, omega_m, omega_lam, omega_k: Refer to function E
     z: array
         redshift
-    """
 
-    return (1 + z) * transverse_comoving_distance(H_0, omega_m, omega_lam, omega_k, z)
+    Returns:
+    luminosity_distance: float
+        Luminosity Distance    
+    """
+    luminosity_distance = (1 + z) * transverse_comoving_distance(
+        H_0, omega_m, omega_lam, omega_k, z
+    )
+    return luminosity_distance
 
 
 def signal(H_0, omega_m, omega_lam, omega_k, z):
@@ -119,16 +126,13 @@ def signal(H_0, omega_m, omega_lam, omega_k, z):
     Calculates the signal
 
     Parameters:
-    H_0: float
-        the Hubble constant
-    omega_m: float
-        total matter density
-    omega_lam: float
-        dark energy density
-    omega_k: float
-        curvature
+    H_0, omega_m, omega_lam, omega_k: Refer to function E
     z: array
         redshift
+
+    Returns:
+    signal: float
+        Distance modulus
     """
     signal = 5 * np.log10(
         luminosity_distance(H_0, omega_m, omega_lam, omega_k, z) * 10 ** 6 / 10
@@ -144,14 +148,7 @@ def chi_squared(
     Calculates chi squared
 
     Parameters:
-    H_0: float
-        the Hubble constant
-    omega_m: float
-        total matter density
-    omega_lam: float
-        dark energy density
-    omega_k: float
-        curvature
+    H_0, omega_m, omega_lam, omega_k: Refer to function E
     M: float
         Nuisance parameter
     z: array
@@ -185,15 +182,28 @@ def likelihood(
     H_0, omega_m, omega_lam, omega_k, M, container, include_systematic_errors=True
 ):
     """
-    returns the likelihood of a state given a set of parameters.
-    """
+    Returns the likelihood of a state given a set of parameters.
+    
+    Parameters:
+    H_0, omega_m, omega_lam, omega_k: Refer to function E
+    M: float
+        Nuisance parameter
+    container: DataContainer
+        A container filled with data imported from the provided data files.    
+    include_systematic_errors: Boolean
+        Flag to include systematic errors
 
-    return np.exp(
+    Returns:
+    likelihood: float
+            Likelihood of a state given a set of parameters.
+    """
+    likelihood = np.exp(
         -chi_squared(
             H_0, omega_m, omega_lam, omega_k, M, container, include_systematic_errors
         )
         / 2
     )
+    return likelihood
 
 
 def generating_function(

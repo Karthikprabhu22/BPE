@@ -102,5 +102,4 @@ def test_DataContainer():
 test_E()
 test_luminosity_distance()
 test_generating_function()
-test_metropolis()
 test_DataContainer()

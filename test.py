@@ -47,7 +47,9 @@ def test_luminosity_distance():
 def test_generating_function():
     container = DataContainer()
     param_vector = [0.1, 0.2, 0.3, 0.4]
-    test_g_f = generating_function(param_vector, container)
+    test_g_f = generating_function(
+        param_vector, container, include_systematic_errors=True, include_M_prior=False
+    )
     assert len(test_g_f) == 4
     for parameter in test_g_f:
         assert type(parameter) == float
@@ -56,7 +58,9 @@ def test_generating_function():
 def test_metropolis():
     container = DataContainer()
     current_state = [0.1, 0.2, 0.3, 0.4]
-    new_state = metropolis(current_state, container)
+    new_state = metropolis(
+        current_state, container, include_systematic_errors=True, include_M_prior=False
+    )
     assert len(metropolis) == 4
     for parameter in new_state:
         assert type(parameter) == float

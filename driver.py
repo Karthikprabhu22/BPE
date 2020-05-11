@@ -11,7 +11,7 @@ import corner
 c = bpe.DataContainer()
 c.import_data()
 
-chain = bpe.MCMC(10000, c, include_systematic_errors=True, include_M_prior=False)
+chain = bpe.MCMC(30000, c, include_systematic_errors=True, include_M_prior=False)
 
 # Plotting function
 fig = plt.figure()
@@ -21,6 +21,7 @@ plt.ylabel(r"$\Omega_\Lambda$")
 plt.title(r"$oCDM$ Constraints For SN-only Sample")
 corner.hist2d(chain[:, 1], chain[:, 2])
 plt.show()
+plt.savefig("omol.png")
 
 
 # Plot the other fig
@@ -48,3 +49,4 @@ plt.semilogx()
 plt.plot(c.z, [0] * 40)
 plt.errorbar(c.z, mu_D - mu_T, fmt="o", yerr=c.dmb)
 plt.show()
+plt.savefig("lum_dist.png")

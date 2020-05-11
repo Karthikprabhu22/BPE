@@ -48,7 +48,7 @@ def test_generating_function():
     container = DataContainer()
     param_vector = [0.1, 0.2, 0.3, 0.4]
     test_g_f = generating_function(
-        param_vector, container, include_systematic_errors=True, include_M_prior=False
+        param_vector, container, include_systematic_errors=True
     )
     assert len(test_g_f) == 4
     for parameter in test_g_f:

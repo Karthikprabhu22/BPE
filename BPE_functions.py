@@ -333,6 +333,15 @@ def MCMC(num_iter, container, include_systematic_errors=True, include_M_prior=Fa
 class DataContainer(object):
     """
     A class used to import and store data of the form expected for this project
+    
+    Imports the parameter values from the file lcparam_DS17f.txt and stores them in 
+    separate arrays, ordered by name (in this case name is an integer 0-39)
+    
+    lcparam_DS17f.txt is assumed to be stored in a directory called data that is 
+    located in the same directory as BPE_functions.py
+    
+    Imports the systematic covariance matrix from the file sys_DS17f.txt 
+    and stores it in a 2D array
     """
 
     def __init__(self):
@@ -379,48 +388,3 @@ class DataContainer(object):
         self.inverted_statistical_covariance_matrix = np.linalg.inv(
             self.statistical_covariance_matrix
         )
-
-    def import_params(self):
-        """
-        Imports the parameter values from the file lcparam_DS17f.txt and stores them in 
-        separate arrays, ordered by name (in this case name is an integer 0-39)
-        
-        lcparam_DS17f.txt is assumed to be stored in a directory called data that is 
-        located in the same directory as BPE_function.py
-        """
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        filepath = dir_path + "/data/lcparam_DS17f.txt"
-
-        self.name, self.z, self.mb, self.dmb = np.genfromtxt(
-            filepath, usecols=(0, 1, 4, 5), delimiter=" ", unpack=True
-        )
-
-    def import_systematic_covariance_matrix(self):
-        """
-        Imports the systematic covariance matrix from the file sys_DS17f.txt and stores it in a 2D array
-        """
-
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        filepath = dir_path + "/data/sys_DS17f.txt"
-
-        covariance_values = []
-
-        with open(filepath) as file:
-            matrix_dimension = int(file.readline())
-            for line in file:
-                value = float(line)
-                covariance_values.append(value)
-
-        covariance_list = np.asarray(covariance_values)
-        two_d_covariance_matrix = covariance_list.reshape(
-            matrix_dimension, matrix_dimension
-        )
-
-        self.systematic_covariance_matrix = two_d_covariance_matrix
-
-    def calculate_total_covariance_matrix(self):
-        self.covariance_matrix = np.copy(self.systematic_covariance_matrix)
-        for i in range(40):
-            self.covariance_matrix[i][i] += self.dmb[i] ** 2
-
-        self.inverted_covariance_matrix = np.linalg.inv(self.covariance_matrix)

@@ -251,6 +251,7 @@ def metropolis(
             1.0 - g_vector[1] - g_vector[2],
             g_vector[3],
             container,
+            include_systematic_errors=include_systematic_errors
         )
         / (
             likelihood(
@@ -260,6 +261,7 @@ def metropolis(
                 1.0 - current_state[1] - current_state[2],
                 current_state[3],
                 container,
+                include_systematic_errors=include_systematic_errors
             )
         )
     )

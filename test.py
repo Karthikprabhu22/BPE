@@ -45,25 +45,39 @@ def test_luminosity_distance():
 
 
 def test_generating_function():
+    """
+    Test functionality of function
+    generating_function(param_vector, container, mcmc_covariance, include_systematic_errors)
+    """
     container = DataContainer()
+    container.import_data()
     param_vector = [0.1, 0.2, 0.3, 0.4]
     test_g_f = generating_function(
-        param_vector, container, include_systematic_errors=True, include_M_prior=False
+        param_vector, container, include_systematic_errors=True
     )
     assert len(test_g_f) == 4
     for parameter in test_g_f:
-        assert type(parameter) == float
+        assert isinstance(parameter, float), "Parameters are not floats"
 
 
 def test_metropolis():
+    """
+    Test functionality of function
+    metropolis(current_state, container, include_systematic_errors, include_M_prior)
+    """
     container = DataContainer()
-    current_state = [0.1, 0.2, 0.3, 0.4]
-    new_state = metropolis(
-        current_state, container, include_systematic_errors=True, include_M_prior=False
-    )
-    assert len(metropolis) == 4
+    container.import_data()
+    current_state = [
+        np.random.normal(loc=74, scale=3),
+        np.random.normal(loc=0.3, scale=0.0001),
+        np.random.normal(loc=0.7, scale=0.0001),
+        np.random.normal(loc=-19.23, scale=0.01),
+    ]
+    new_state = metropolis(current_state, container)
+    assert len(new_state) == 4
+
     for parameter in new_state:
-        assert type(parameter) == float
+        assert isinstance(parameter, float), "Parameters are not floats"
 
 
 def test_DataContainer():
@@ -99,5 +113,6 @@ def test_DataContainer():
 
 test_E()
 test_luminosity_distance()
-test_generating_function
+test_generating_function()
 test_DataContainer()
+test_metropolis()

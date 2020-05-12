@@ -1,5 +1,5 @@
 """
-Use this function to run the Bayesian Parameter Estimation to infer the values of cosmological parameters from the Supernova dataset.
+Run this python file to run the Bayesian Parameter Estimation to infer the values of cosmological parameters from the Supernova dataset and save the plots.
 """
 import BPE_functions as bpe
 

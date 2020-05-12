@@ -21,7 +21,6 @@ plt.xlabel(r"$\Omega_m$")
 plt.ylabel(r"$\Omega_\Lambda$")
 plt.title(r"$oCDM$ Constraints For SN-only Sample")
 corner.hist2d(chain[:, 1], chain[:, 2])
-plt.show()
 plt.savefig("omol.png")
 
 
@@ -49,17 +48,16 @@ plt.semilogx()
 
 plt.plot(c.z, [0] * 40)
 plt.errorbar(c.z, mu_D - mu_T, fmt="o", yerr=c.dmb)
-plt.show()
 plt.savefig("lum_dist.png")
 
 
-# Plot the other fig
+# Plot posterior probability density of H_0
 fig = plt.figure()
 plt.hist(chain[:, 0])
 plt.xlabel("$H_0$")
 plt.ylabel("Posterior")
-plt.show()
-plt.savefig(r"Posterior distribution of $H_0$.png")
+plt.title("Posterior Probability Density of " + r"$H_0$")
+plt.savefig("posterior.png")
 
 
 # Plot confidence intervals for 1-sigma and 2-sigma
@@ -84,4 +82,4 @@ for j in range(1, 3):
     ell.set_edgecolor("black")
     ax.add_artist(ell)
 plt.scatter(omega_m, omega_lambda)
-plt.show()
+plt.savefig("ellipse_confidence_intervals.png")

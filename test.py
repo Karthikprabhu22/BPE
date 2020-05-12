@@ -59,11 +59,15 @@ def test_generating_function():
 def test_metropolis():
     container = DataContainer()
     container.import_data()
-    current_state = [70, 0.3, 0.7, -18]
-    new_state = metropolis(
-        current_state, container,
-    )
+    current_state = [
+        np.random.normal(loc=74, scale=3),
+        np.random.normal(loc=0.3, scale=0.0001),
+        np.random.normal(loc=0.7, scale=0.0001),
+        np.random.normal(loc=-19.23, scale=0.01),
+    ]
+    new_state = metropolis(current_state, container)
     assert len(new_state) == 4
+
     for parameter in new_state:
         assert isinstance(parameter, float), "Parameters are not floats"
 
@@ -103,3 +107,4 @@ test_E()
 test_luminosity_distance()
 test_generating_function()
 test_DataContainer()
+test_metropolis()

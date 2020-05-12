@@ -45,6 +45,10 @@ def test_luminosity_distance():
 
 
 def test_generating_function():
+    """
+    Test functionality of function
+    generating_function(param_vector, container, mcmc_covariance, include_systematic_errors)
+    """
     container = DataContainer()
     container.import_data()
     param_vector = [0.1, 0.2, 0.3, 0.4]
@@ -57,6 +61,10 @@ def test_generating_function():
 
 
 def test_metropolis():
+    """
+    Test functionality of function
+    metropolis(current_state, container, include_systematic_errors, include_M_prior)
+    """
     container = DataContainer()
     container.import_data()
     current_state = [

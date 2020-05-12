@@ -14,17 +14,7 @@ c.import_data()
 
 chain = bpe.MCMC(10000, c, include_systematic_errors=True, include_M_prior=False)
 
-# Plotting function
-fig = plt.figure()
-ax = plt.axes()
-plt.xlabel(r"$\Omega_m$")
-plt.ylabel(r"$\Omega_\Lambda$")
-plt.title(r"$oCDM$ Constraints For SN-only Sample")
-corner.hist2d(chain[:, 1], chain[:, 2])
-plt.savefig("omol.png")
-
-
-# Plot the other fig
+# Plot fig. 11 from the paper
 mu_D = c.mb - chain[:, 3].mean()
 mu_T = bpe.signal(
     chain[:, 0].mean(),
@@ -33,6 +23,7 @@ mu_T = bpe.signal(
     1 - chain[:, 1].mean() - chain[:, 2].mean(),
     c.z,
 )
+
 fig = plt.figure()
 ax = plt.axes()
 plt.subplot(211)
@@ -43,6 +34,7 @@ plt.plot(c.z, mu_D)
 plt.plot(c.z, mu_T, "o")
 
 plt.subplot(212)
+plt.xlabel(r"$z$")
 plt.ylabel("Hubble Res(mag)")
 plt.semilogx()
 
@@ -53,14 +45,14 @@ plt.savefig("lum_dist.png")
 
 # Plot posterior probability density of H_0
 fig = plt.figure()
-plt.hist(chain[:, 0])
+plt.hist(chain[:, 0], bins=20)
 plt.xlabel("$H_0$")
 plt.ylabel("Posterior")
 plt.title("Posterior Probability Density of " + r"$H_0$")
 plt.savefig("posterior.png")
 
 
-# Plot confidence intervals for 1-sigma and 2-sigma
+# Plot fig. 18 from the paper
 omega_m = chain[:, 1]
 omega_lambda = chain[:, 2]
 
@@ -70,7 +62,7 @@ lambda_ = np.sqrt(lambda_)
 ax = plt.subplot(111, aspect="equal")
 plt.xlabel(r"$\Omega_m$")
 plt.ylabel(r"$\Omega_\Lambda$")
-plt.title(r"$1\sigma$" + " and " + r"$2\sigma$" + " Confidence Intervals")
+plt.title(r"$oCDM$ Constraints For SN-only Sample")
 for j in range(1, 3):
     ell = Ellipse(
         xy=(np.mean(omega_m), np.mean(omega_lambda)),

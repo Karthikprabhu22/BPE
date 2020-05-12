@@ -278,7 +278,7 @@ def MCMC(num_iter, container, include_systematic_errors=True, include_M_prior=Fa
     # create the random initial configuration in parameter space
 
     current_state = [
-        np.random.normal(loc=74, scale=3),
+        np.random.normal(loc=74, scale=1.5),
         np.random.normal(loc=0.3, scale=0.0001),
         np.random.normal(loc=0.7, scale=0.0001),
         np.random.normal(loc=-19.23, scale=0.01),
